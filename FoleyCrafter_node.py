@@ -229,7 +229,8 @@ class FoleyCrafter_Sampler:
                 "steps": ("INT", {"default": 25, "min": 1, "max": 100}),
                 "sample_width": ("INT", {"default": 1024, "min": 128, "max": 1024, "step": 64, "display": "number"}),
                 "sample_height": ("INT", {"default": 256, "min": 128, "max": 1024, "step": 64, "display": "number"}),
-                "video_dubbing": ("BOOLEAN", {"default": False},), }
+                "video_dubbing": ("BOOLEAN", {"default": False},),
+                "video_filename": ("STRING",), }
         }
     
     RETURN_TYPES = ("IMAGE", "AUDIO", "FLOAT")
@@ -237,11 +238,14 @@ class FoleyCrafter_Sampler:
     FUNCTION = "fc_main"
     CATEGORY = "FoleyCrafter"
     
-    def run_inference(self,pipe, vocoder, time_detector,controlnet_scale,seeds,image_encoder,video_files,max_frame,prompt,negative_prompt,steps,width,height,video_dubbing):
+    def run_inference(self,pipe, vocoder, time_detector,controlnet_scale,seeds,image_encoder,video_files,video_filename,max_frame,prompt,negative_prompt,steps,width,height,video_dubbing):
 
         generator = torch.Generator(device=device)
         generator.manual_seed(seeds)
         image_processor = CLIPImageProcessor()
+
+        if video_files=="none":
+            video_files=video_filename
 
         source_video = cv2.VideoCapture(video_files)
         fps = source_video.get(cv2.CAP_PROP_FPS)
@@ -326,12 +330,13 @@ class FoleyCrafter_Sampler:
             return frames_list, audio_output, fps,v_width,v_height
     
             
-    def fc_main(self, pipe, vocoder, time_detector,image_encoder,video_files, prompt,negative_prompt, seeds,max_frame,controlnet_scale, steps,sample_width,sample_height, video_dubbing, ):
-        if video_files != "none":
-            video_files=osp.join(folder_paths.input_directory, video_files)
-            images,audio,fps,v_width,v_height=self.run_inference( pipe, vocoder, time_detector,controlnet_scale,seeds,image_encoder,video_files,max_frame,prompt,negative_prompt,steps,sample_width,sample_height,video_dubbing)
-        else:
-            raise "need video file"
+    def fc_main(self, pipe, vocoder, time_detector,image_encoder,video_files,video_filename, prompt,negative_prompt, seeds,max_frame,controlnet_scale, steps,sample_width,sample_height, video_dubbing, ):
+        if video_files=="none":
+            video_files=video_filename
+            
+        video_files=osp.join(folder_paths.input_directory, video_files)
+        images,audio,fps,v_width,v_height=self.run_inference( pipe, vocoder, time_detector,controlnet_scale,seeds,image_encoder,video_files,video_filename,max_frame,prompt,negative_prompt,steps,sample_width,sample_height,video_dubbing)
+        
         frame_rate=float(fps)
         gen = narry_list(images)
         images = torch.from_numpy(np.fromiter(gen, np.dtype((np.float32, (v_height, v_width, 3)))))
