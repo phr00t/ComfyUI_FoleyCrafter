@@ -4,7 +4,7 @@ from ..onset import VideoOnsetNet
 
 
 class TimeDetector(nn.Module):
-    def __init__(self, video_length=150, audio_length=1024):
+    def __init__(self, video_length=49, audio_length=1024):
         super(TimeDetector, self).__init__()
         self.pred_net = VideoOnsetNet(pretrained=False)
         self.soft_fn = nn.Tanh()
